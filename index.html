@@ -12,9 +12,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Brawl Math">
-    <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
-    <link rel="icon" href="assets/favicon-16.png" sizes="16x16" type="image/png">
-    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+    <link rel="icon" href="assets/favicon-32-ruler.png" sizes="32x32" type="image/png">
+    <link rel="icon" href="assets/favicon-16-ruler.png" sizes="16x16" type="image/png">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon-ruler.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -196,6 +196,7 @@
             border: 2px solid rgba(255, 255, 255, 0.3);
             display: none; /* Shown only on touch devices usually, but we'll show it based on input */
             pointer-events: auto;
+            touch-action: none; /* stop the browser from claiming this gesture for scroll/zoom */
         }
 
         #joystick-knob {
@@ -208,6 +209,8 @@
             background-color: rgba(52, 152, 219, 0.8);
             transform: translate(-50%, -50%);
             box-shadow: inset 0 -3px 5px rgba(0,0,0,0.3);
+            touch-action: none;
+            pointer-events: none; /* let touches pass through to the zone so dragging the knob itself works too */
         }
 
         /* Helper Mascot (Гео) Styles */
@@ -393,7 +396,7 @@
     <div id="start-screen" class="modal">
         <div class="modal-content">
             <h1 class="text-2xl sm:text-3xl text-blue-400 mb-2 drop-shadow-lg">BRAWL MATH</h1>
-            <h2 class="text-lg sm:text-xl text-yellow-400 mb-6 pixel-font">4. Клас Едишън</h2>
+            <h2 class="text-lg sm:text-xl text-yellow-400 mb-6 pixel-font">4. Клас</h2>
 
             <!-- Intro Helper Bubble -->
             <div class="flex items-center justify-center gap-4 mb-6">
@@ -891,13 +894,35 @@
         }
     });
 
-    joystickZone.addEventListener('touchstart', (e) => { isDraggingJoystick = true; handleJoystickMove(e); }, {passive: false});
-    window.addEventListener('touchmove', (e) => { if(isDraggingJoystick) { e.preventDefault(); handleJoystickMove(e); } }, {passive: false});
-    window.addEventListener('touchend', () => { 
-        isDraggingJoystick = false; 
+    // Track a specific finger by id, so a second tap elsewhere on screen can't hijack the joystick
+    let joystickTouchId = null;
+
+    joystickZone.addEventListener('touchstart', (e) => {
+        e.preventDefault(); // claim the gesture immediately, before the browser tries to scroll/zoom
+        const t = e.changedTouches[0];
+        joystickTouchId = t.identifier;
+        isDraggingJoystick = true;
+        handleJoystickMove(t);
+    }, {passive: false});
+
+    window.addEventListener('touchmove', (e) => {
+        if (!isDraggingJoystick) return;
+        const t = Array.from(e.changedTouches).find(t => t.identifier === joystickTouchId);
+        if (!t) return;
+        e.preventDefault();
+        handleJoystickMove(t);
+    }, {passive: false});
+
+    function endJoystickTouch(e) {
+        const ended = Array.from(e.changedTouches).some(t => t.identifier === joystickTouchId);
+        if (!ended) return;
+        isDraggingJoystick = false;
+        joystickTouchId = null;
         joystickKnob.style.transform = `translate(-50%, -50%)`;
         player.vx = 0; player.vy = 0;
-    });
+    }
+    window.addEventListener('touchend', endJoystickTouch);
+    window.addEventListener('touchcancel', endJoystickTouch);
 
 
     function updateInput() {

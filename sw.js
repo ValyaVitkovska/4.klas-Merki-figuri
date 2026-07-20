@@ -1,13 +1,13 @@
-const CACHE_NAME = 'brawl-math-v1';
+const CACHE_NAME = 'brawl-math-v2';
 const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
   './assets/geo.png',
   './assets/logo.png',
-  './assets/icon-192.png',
-  './assets/icon-512.png',
-  './assets/apple-touch-icon.png'
+  './assets/icon-192-ruler.png',
+  './assets/icon-512-ruler.png',
+  './assets/apple-touch-icon-ruler.png'
 ];
 
 self.addEventListener('install', (event) => {
