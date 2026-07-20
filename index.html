@@ -587,90 +587,196 @@
         }
     };
 
-    // Helper function to generate dynamic questions
-    function generateDynamicQuestion() {
-        const type = Math.floor(Math.random() * 11);
-        let q, a, wrong1, wrong2;
-        
-        switch(type) {
-            case 0: // Дължина см -> мм
-                let cm = Math.floor(Math.random() * 15) + 2;
-                q = `Колко милиметра (мм) са ${cm} см?`;
-                a = `${cm * 10} мм`;
-                wrong1 = `${cm * 100} мм`;
-                wrong2 = `${cm + 10} мм`;
-                break;
-            case 1: // Дължина м -> см
-                let m = Math.floor(Math.random() * 10) + 2;
-                q = `Колко сантиметра (см) има в ${m} метра?`;
-                a = `${m * 100} см`;
-                wrong1 = `${m * 10} см`;
-                wrong2 = `${m * 1000} см`;
-                break;
-            case 2: // Маса т -> кг
-                let t = Math.floor(Math.random() * 8) + 2;
-                q = `${t} тона са равни на:`;
-                a = `${t * 1000} кг`;
-                wrong1 = `${t * 100} кг`;
-                wrong2 = `${t * 10000} кг`;
-                break;
-            case 3: // Време ч -> мин
-                let h = Math.floor(Math.random() * 5) + 2;
-                q = `Колко минути има в ${h} часа?`;
-                a = `${h * 60} мин`;
-                wrong1 = `${h * 100} мин`;
-                wrong2 = `${h * 24} мин`;
-                break;
-            case 4: // Време век -> год
-                let v = Math.floor(Math.random() * 5) + 2;
-                q = `${v} века са равни на:`;
-                a = `${v * 100} години`;
-                wrong1 = `${v * 10} години`;
-                wrong2 = `${v * 1000} години`;
-                break;
-            case 5: // Обиколка Квадрат
-                let a_sq = Math.floor(Math.random() * 12) + 4;
-                q = `Обиколката на квадрат със страна ${a_sq} см е:`;
-                a = `${a_sq * 4} см`;
-                wrong1 = `${a_sq * a_sq} см`;
-                wrong2 = `${a_sq * 2} см`;
-                break;
-            case 6: // Лице Правоъгълник
-                let a_rect = Math.floor(Math.random() * 9) + 3;
-                let b_rect = Math.floor(Math.random() * 9) + 3;
-                if(a_rect === b_rect) b_rect++; // make sure it's a rectangle
-                q = `Лицето на правоъгълник със страни ${a_rect} см и ${b_rect} см е:`;
-                a = `${a_rect * b_rect} кв.см`;
-                wrong1 = `${2 * (a_rect + b_rect)} кв.см`;
-                wrong2 = `${a_rect * b_rect + 5} кв.см`;
-                break;
-            case 7: // Обиколка Равностранен триъгълник
-                let a_tri = Math.floor(Math.random() * 15) + 3;
-                q = `Обиколката на равностранен триъгълник със страна ${a_tri} см е:`;
-                a = `${a_tri * 3} см`;
-                wrong1 = `${a_tri * 4} см`;
-                wrong2 = `${a_tri * 2} см`;
-                break;
-            case 8: // Видове триъгълници
-                q = "Триъгълник с един прав ъгъл се нарича:";
-                a = "Правоъгълен";
-                wrong1 = "Тъпоъгълен";
-                wrong2 = "Равностранен";
-                break;
-            case 9: // Видове ъгли
-                q = "Ъгъл, по-малък от правия, се нарича:";
-                a = "Остър";
-                wrong1 = "Тъп";
-                wrong2 = "Изправен";
-                break;
-            case 10: // Дробни маси
-                q = "Половин килограм е равен на:";
-                a = "500 г";
-                wrong1 = "50 г";
-                wrong2 = "1000 г";
-                break;
+    // Helper: random integer between min and max (inclusive)
+    function randInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    // Question bank — a "forward" and a "reverse" version of every conversion/formula,
+    // so the game asks both "given X find Y" and "given Y find X".
+    const questionGenerators = [
+        // Дължина: см -> мм
+        () => {
+            const cm = randInt(2, 16);
+            return { q: `Колко милиметра (мм) са ${cm} см?`, a: `${cm * 10} мм`,
+                wrong: [`${cm * 100} мм`, `${cm + 10} мм`] };
+        },
+        // Дължина: мм -> см (обратна)
+        () => {
+            const cmVal = randInt(2, 16);
+            const mm = cmVal * 10;
+            return { q: `${mm} мм са равни на колко сантиметра (см)?`, a: `${cmVal} см`,
+                wrong: [`${mm} см`, `${cmVal * 100} см`] };
+        },
+        // Дължина: м -> см
+        () => {
+            const m = randInt(2, 10);
+            return { q: `Колко сантиметра (см) има в ${m} метра?`, a: `${m * 100} см`,
+                wrong: [`${m * 10} см`, `${m * 1000} см`] };
+        },
+        // Дължина: см -> м (обратна)
+        () => {
+            const mVal = randInt(2, 11);
+            const cm = mVal * 100;
+            return { q: `${cm} см са равни на колко метра (м)?`, a: `${mVal} м`,
+                wrong: [`${cm} м`, `${mVal * 10} м`] };
+        },
+        // Маса: т -> кг
+        () => {
+            const t = randInt(2, 9);
+            return { q: `${t} тона са равни на:`, a: `${t * 1000} кг`,
+                wrong: [`${t * 100} кг`, `${t * 10000} кг`] };
+        },
+        // Маса: кг -> т (обратна)
+        () => {
+            const tVal = randInt(2, 9);
+            const kg = tVal * 1000;
+            return { q: `${kg} кг са равни на колко тона?`, a: `${tVal} т`,
+                wrong: [`${kg} т`, `${tVal * 10} т`] };
+        },
+        // Маса: кг -> г
+        () => {
+            const kg = randInt(2, 9);
+            return { q: `Колко грама (г) са ${kg} кг?`, a: `${kg * 1000} г`,
+                wrong: [`${kg * 100} г`, `${kg * 10000} г`] };
+        },
+        // Маса: г -> кг (обратна)
+        () => {
+            const kgVal = randInt(1, 9);
+            const g = kgVal * 1000;
+            return { q: `${g} г са равни на колко килограма (кг)?`, a: `${kgVal} кг`,
+                wrong: [`${g} кг`, `${kgVal * 10} кг`] };
+        },
+        // Дробни маси (половин / четвърт кг)
+        () => {
+            const options = [
+                { name: 'Половин', value: 500, confuse: 1000 },
+                { name: 'Четвърт', value: 250, confuse: 500 }
+            ];
+            const opt = options[randInt(0, options.length - 1)];
+            return { q: `${opt.name} килограм е равен на:`, a: `${opt.value} г`,
+                wrong: [`${opt.value / 10} г`, `${opt.confuse} г`] };
+        },
+        // Време: ч -> мин
+        () => {
+            const h = randInt(2, 6);
+            return { q: `Колко минути има в ${h} часа?`, a: `${h * 60} мин`,
+                wrong: [`${h * 100} мин`, `${h * 24} мин`] };
+        },
+        // Време: мин -> ч (обратна)
+        () => {
+            const hVal = randInt(2, 6);
+            const min = hVal * 60;
+            return { q: `${min} минути са равни на колко часа?`, a: `${hVal} ч`,
+                wrong: [`${min} ч`, `${hVal * 2} ч`] };
+        },
+        // Време: век -> год
+        () => {
+            const v = randInt(2, 5);
+            return { q: `${v} века са равни на:`, a: `${v * 100} години`,
+                wrong: [`${v * 10} години`, `${v * 1000} години`] };
+        },
+        // Време: год -> век (обратна)
+        () => {
+            const cVal = randInt(2, 5);
+            const year = cVal * 100;
+            return { q: `${year} години са равни на колко века?`, a: `${cVal} века`,
+                wrong: [`${year} века`, `${cVal * 10} века`] };
+        },
+        // Квадрат: страна -> обиколка
+        () => {
+            const a = randInt(4, 15);
+            return { q: `Обиколката на квадрат със страна ${a} см е:`, a: `${a * 4} см`,
+                wrong: [`${a * a} см`, `${a * 2} см`] };
+        },
+        // Квадрат: обиколка -> страна (обратна)
+        () => {
+            const side = randInt(3, 15);
+            const P = side * 4;
+            return { q: `Обиколката на квадрат е ${P} см. Каква е дължината на страната му?`, a: `${side} см`,
+                wrong: [`${P} см`, `${side * 2} см`] };
+        },
+        // Квадрат: обиколка -> лице (обратна)
+        () => {
+            const side = randInt(3, 12);
+            const P = side * 4;
+            const area = side * side;
+            return { q: `Обиколката на квадрат е ${P} см. Колко е лицето му?`, a: `${area} кв.см`,
+                wrong: [`${P} кв.см`, `${P * 2} кв.см`] };
+        },
+        // Квадрат: лице -> страна (обратна)
+        () => {
+            const side = randInt(3, 12);
+            const area = side * side;
+            return { q: `Лицето на квадрат е ${area} кв.см. Каква е дължината на страната му?`, a: `${side} см`,
+                wrong: [`${area} см`, `${side * 4} см`] };
+        },
+        // Правоъгълник: страни -> лице
+        () => {
+            let a = randInt(3, 11), b = randInt(3, 11);
+            if (a === b) b++;
+            return { q: `Лицето на правоъгълник със страни ${a} см и ${b} см е:`, a: `${a * b} кв.см`,
+                wrong: [`${2 * (a + b)} кв.см`, `${a * b + 5} кв.см`] };
+        },
+        // Правоъгълник: лице + страна -> другата страна (обратна)
+        () => {
+            let a = randInt(3, 11), b = randInt(3, 11);
+            if (a === b) b++;
+            const area = a * b;
+            return { q: `Лицето на правоъгълник е ${area} кв.см, а едната му страна е ${a} см. Колко е другата страна?`, a: `${b} см`,
+                wrong: [`${area} см`, `${a + b} см`] };
+        },
+        // Равностранен триъгълник: страна -> обиколка
+        () => {
+            const a = randInt(3, 15);
+            return { q: `Обиколката на равностранен триъгълник със страна ${a} см е:`, a: `${a * 3} см`,
+                wrong: [`${a * 4} см`, `${a * 2} см`] };
+        },
+        // Равностранен триъгълник: обиколка -> страна (обратна)
+        () => {
+            const side = randInt(3, 15);
+            const P = side * 3;
+            return { q: `Обиколката на равностранен триъгълник е ${P} см. Каква е дължината на страната му?`, a: `${side} см`,
+                wrong: [`${P} см`, `${side * 2} см`] };
+        },
+        // Видове триъгълници
+        () => ({ q: "Триъгълник с един прав ъгъл се нарича:", a: "Правоъгълен",
+            wrong: ["Тъпоъгълен", "Равностранен"] }),
+        // Видове ъгли
+        () => ({ q: "Ъгъл, по-малък от правия, се нарича:", a: "Остър",
+            wrong: ["Тъп", "Изправен"] })
+    ];
+
+    // "Bag" randomizer: shuffles every question type into a fresh order and works
+    // through it before repeating, so each playthrough feels varied and nothing
+    // repeats back-to-back.
+    let questionBag = [];
+    function refillQuestionBag() {
+        questionBag = questionGenerators.map((_, i) => i);
+        for (let i = questionBag.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [questionBag[i], questionBag[j]] = [questionBag[j], questionBag[i]];
         }
-        return { q, a, wrong: [wrong1, wrong2] };
+    }
+
+    function generateDynamicQuestion() {
+        if (questionBag.length === 0) refillQuestionBag();
+        const type = questionBag.pop();
+
+        // A handful of number combinations make a "wrong" answer land on the same
+        // value as the correct one (e.g. a 4 cm square has equal perimeter and area
+        // numerically). Re-roll the same question type until the three answers are
+        // guaranteed distinct.
+        let q;
+        let attempts = 0;
+        do {
+            q = questionGenerators[type]();
+            attempts++;
+        } while (
+            attempts < 15 &&
+            (q.wrong[0] === q.a || q.wrong[1] === q.a || q.wrong[0] === q.wrong[1])
+        );
+        return q;
     }
 
     let items = [];
@@ -1058,7 +1164,8 @@
         
         items = [];
         particles = [];
-        
+        refillQuestionBag(); // fresh, freshly-shuffled set of questions every time the game starts
+
         startScreen.classList.add('hidden');
         gameOverScreen.classList.add('hidden');
         
